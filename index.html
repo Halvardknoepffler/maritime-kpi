@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaritimeKPI — French Maritime Supply Chain Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0a1628;
+    --blue: #1a3a6b;
+    --accent: #00c4ff;
+    --accent2: #ff6b35;
+    --green: #00e5a0;
+    --red: #ff3b5c;
+    --amber: #ffb347;
+    --surface: #0f2044;
+    --surface2: #162952;
+    --border: rgba(0,196,255,0.15);
+    --text: #e8f0ff;
+    --muted: #7a96c4;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--navy);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── ANIMATED GRID BACKGROUND ─── */
+  body::before {
+    content:'';
+    position:fixed; inset:0; z-index:0;
+    background-image:
+      linear-gradient(rgba(0,196,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,196,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridDrift 20s linear infinite;
+  }
+  @keyframes gridDrift { to { background-position: 40px 40px; } }
+
+  /* ─── GLOW BLOBS ─── */
+  .blob {
+    position:fixed; border-radius:50%; filter:blur(80px); z-index:0; pointer-events:none;
+  }
+  .blob1 { width:400px; height:400px; background:rgba(0,196,255,0.08); top:-100px; right:10%; }
+  .blob2 { width:300px; height:300px; background:rgba(255,107,53,0.06); bottom:20%; left:5%; }
+
+  /* ─── NAV ─── */
+  nav {
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background: rgba(10,22,40,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 0 2rem;
+    height: 60px;
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: -0.5px;
+    color: white;
+  }
+  .nav-brand span { color: var(--accent); }
+  .nav-links { display:flex; gap:0.25rem; }
+  .nav-links a {
+    color: var(--muted); text-decoration:none;
+    font-size:0.8rem; font-weight:500;
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .nav-links a:hover, .nav-links a.active {
+    color: white; background: rgba(0,196,255,0.12);
+  }
+  .nav-badge {
+    font-size:0.7rem; background: var(--accent); color: var(--navy);
+    padding:0.2rem 0.6rem; border-radius:20px; font-weight:700;
+  }
+
+  /* ─── SECTIONS ─── */
+  section { position:relative; z-index:1; }
+  .section-hidden { display:none; }
+
+  /* ─── HERO ─── */
+  #hero {
+    min-height: 100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding: 6rem 2rem 4rem;
+  }
+  .hero-tag {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    background: rgba(0,196,255,0.1);
+    border: 1px solid rgba(0,196,255,0.25);
+    color: var(--accent);
+    font-size:0.75rem; font-weight:600; letter-spacing:1px; text-transform:uppercase;
+    padding:0.4rem 1rem; border-radius:20px; margin-bottom:2rem;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-tag::before { content:'●'; font-size:0.5rem; animation: pulse 1.5s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    max-width: 800px;
+    animation: fadeUp 0.7s ease 0.1s both;
+  }
+  h1 .accent { color: var(--accent); }
+  h1 .accent2 { color: var(--accent2); }
+
+  .hero-sub {
+    color: var(--muted); font-size:1.05rem; max-width:560px;
+    margin: 1.5rem auto 0; line-height:1.7;
+    animation: fadeUp 0.7s ease 0.2s both;
+  }
+
+  .hero-stats {
+    display:flex; gap:2rem; margin-top:3.5rem; flex-wrap:wrap; justify-content:center;
+    animation: fadeUp 0.7s ease 0.3s both;
+  }
+  .hero-stat {
+    text-align:center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem 2rem;
+    min-width: 140px;
+  }
+  .hero-stat-val {
+    font-family: var(--font-display);
+    font-size: 2rem; font-weight: 800;
+    color: var(--accent);
+  }
+  .hero-stat-label {
+    font-size:0.75rem; color:var(--muted); margin-top:0.25rem; font-weight:500;
+  }
+
+  .cta-row {
+    display:flex; gap:1rem; margin-top:2.5rem; flex-wrap:wrap; justify-content:center;
+    animation: fadeUp 0.7s ease 0.4s both;
+  }
+  .btn {
+    font-family: var(--font-body); font-weight:600; font-size:0.9rem;
+    padding:0.75rem 1.75rem; border-radius:10px; border:none; cursor:pointer;
+    transition: all 0.2s; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem;
+  }
+  .btn-primary { background: var(--accent); color: var(--navy); }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,196,255,0.35); }
+  .btn-outline {
+    background:transparent; color:var(--text);
+    border:1px solid var(--border);
+  }
+  .btn-outline:hover { background:rgba(0,196,255,0.08); }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ─── SECTION WRAPPER ─── */
+  .section-wrap {
+    max-width: 1200px; margin:0 auto; padding: 5rem 2rem;
+  }
+  .section-header {
+    margin-bottom: 2.5rem;
+  }
+  .section-eyebrow {
+    font-size:0.7rem; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+    color:var(--accent); margin-bottom:0.5rem;
+  }
+  .section-title {
+    font-family:var(--font-display); font-size:2rem; font-weight:800;
+    letter-spacing:-1px; line-height:1.15;
+  }
+  .section-desc { color:var(--muted); margin-top:0.5rem; font-size:0.9rem; max-width:600px; }
+
+  /* ─── CARDS GRID ─── */
+  .cards-grid { display:grid; gap:1rem; }
+  .cards-grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(340px,1fr)); }
+  .cards-grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); }
+  .cards-grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.25s;
+    position:relative; overflow:hidden;
+  }
+  .card:hover {
+    border-color: rgba(0,196,255,0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .card::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity:0; transition:opacity 0.25s;
+  }
+  .card:hover::before { opacity:1; }
+
+  .card-label { font-size:0.72rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:0.75rem; }
+  .card-value { font-family:var(--font-display); font-size:2.2rem; font-weight:800; line-height:1; }
+  .card-sub { font-size:0.8rem; color:var(--muted); margin-top:0.4rem; }
+
+  /* ─── STATUS BADGES ─── */
+  .badge {
+    display:inline-flex; align-items:center; gap:0.35rem;
+    font-size:0.72rem; font-weight:700; padding:0.3rem 0.7rem; border-radius:20px;
+  }
+  .badge-green { background:rgba(0,229,160,0.15); color:var(--green); border:1px solid rgba(0,229,160,0.3); }
+  .badge-amber { background:rgba(255,179,71,0.15); color:var(--amber); border:1px solid rgba(255,179,71,0.3); }
+  .badge-red   { background:rgba(255,59,92,0.15);  color:var(--red);   border:1px solid rgba(255,59,92,0.3); }
+  .badge::before { content:'●'; font-size:0.45rem; }
+
+  /* ─── CAPACITY BAR ─── */
+  .cap-item { margin-bottom:1.5rem; }
+  .cap-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
+  .cap-name { font-size:0.85rem; font-weight:600; }
+  .cap-pct { font-family:var(--font-display); font-weight:800; font-size:1rem; }
+  .cap-bar-bg { height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; position:relative; }
+  .cap-bar-fill {
+    height:100%; border-radius:4px;
+    transition: width 1.5s cubic-bezier(0.25,0.46,0.45,0.94);
+    position:relative;
+  }
+  .cap-bar-fill::after {
+    content:''; position:absolute; right:0; top:-2px; bottom:-2px; width:3px;
+    background:white; border-radius:2px; box-shadow:0 0 8px white;
+  }
+  .fill-green { background: linear-gradient(90deg, #00e5a0, #00c470); }
+  .fill-amber { background: linear-gradient(90deg, #ffb347, #ff8c00); }
+  .fill-red   { background: linear-gradient(90deg, #ff3b5c, #cc1a3a); }
+  .cap-info { font-size:0.72rem; color:var(--muted); margin-top:0.35rem; }
+
+  /* ─── WHAT IF SCENARIO ─── */
+  .scenario-tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; }
+  .stab {
+    padding:0.5rem 1.2rem; border-radius:8px; font-size:0.8rem; font-weight:600;
+    cursor:pointer; border:1px solid var(--border); color:var(--muted);
+    transition:all 0.2s; background:transparent;
+  }
+  .stab.active { background:var(--accent); color:var(--navy); border-color:var(--accent); }
+
+  .scenario-panel { display:none; }
+  .scenario-panel.active { display:block; }
+
+  .scenario-card {
+    background:var(--surface2); border-radius:12px; padding:1.5rem;
+    border:1px solid var(--border); margin-bottom:1rem;
+  }
+  .scenario-trigger {
+    font-size:0.75rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    color:var(--accent2); margin-bottom:0.5rem;
+  }
+  .scenario-title { font-family:var(--font-display); font-size:1.1rem; font-weight:700; margin-bottom:0.75rem; }
+  .scenario-impacts { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem; margin-top:1rem; }
+  .impact-box {
+    background:rgba(0,0,0,0.25); border-radius:10px; padding:1rem;
+    border:1px solid rgba(255,255,255,0.06); text-align:center;
+  }
+  .impact-before { font-size:0.7rem; color:var(--muted); }
+  .impact-port { font-weight:700; font-size:0.9rem; margin:0.25rem 0; }
+  .impact-arrow { color:var(--red); font-size:1.2rem; }
+  .impact-after { font-family:var(--font-display); font-size:1.4rem; font-weight:800; }
+  .after-red { color:var(--red); }
+  .after-amber { color:var(--amber); }
+
+  /* ─── DATA SOURCES ─── */
+  .source-row {
+    display:flex; gap:1rem; align-items:flex-start;
+    padding:1rem 0; border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .source-row:last-child { border-bottom:none; }
+  .source-icon {
+    width:40px; height:40px; border-radius:10px;
+    background:var(--surface2); display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; flex-shrink:0; border:1px solid var(--border);
+  }
+  .source-name { font-weight:700; font-size:0.9rem; }
+  .source-desc { font-size:0.78rem; color:var(--muted); margin-top:0.2rem; line-height:1.5; }
+  .source-what { font-size:0.72rem; margin-top:0.4rem; }
+  .source-what span {
+    background:rgba(0,196,255,0.1); color:var(--accent);
+    padding:0.15rem 0.5rem; border-radius:4px; margin-right:0.3rem;
+    font-weight:600;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider { height:1px; background:var(--border); margin:2rem 0; }
+
+  /* ─── RECO TABLE ─── */
+  .reco-item {
+    display:grid; grid-template-columns:auto 1fr auto;
+    gap:1.25rem; align-items:start;
+    padding:1.25rem 0; border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .reco-num {
+    width:36px; height:36px; border-radius:50%;
+    background:rgba(0,196,255,0.12); border:1px solid rgba(0,196,255,0.3);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:800; font-size:0.85rem; color:var(--accent);
+    flex-shrink:0;
+  }
+  .reco-title { font-weight:700; font-size:0.9rem; margin-bottom:0.3rem; }
+  .reco-desc { font-size:0.78rem; color:var(--muted); line-height:1.6; }
+  .reco-sector {
+    font-size:0.68rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
+    padding:0.25rem 0.6rem; border-radius:6px; white-space:nowrap;
+  }
+  .reco-energy { background:rgba(255,107,53,0.15); color:var(--accent2); border:1px solid rgba(255,107,53,0.3); }
+  .reco-agri { background:rgba(0,229,160,0.12); color:var(--green); border:1px solid rgba(0,229,160,0.3); }
+  .reco-both { background:rgba(0,196,255,0.12); color:var(--accent); border:1px solid rgba(0,196,255,0.3); }
+
+  /* ─── CHOKEPOINT MAP ─── */
+  .choke-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.75rem; }
+  .choke-card {
+    background:var(--surface2); border-radius:12px; padding:1rem;
+    border:1px solid var(--border); transition:all 0.2s;
+  }
+  .choke-card:hover { border-color:rgba(0,196,255,0.4); transform:translateY(-2px); }
+  .choke-name { font-weight:700; font-size:0.85rem; margin-bottom:0.3rem; }
+  .choke-loc { font-size:0.72rem; color:var(--muted); margin-bottom:0.5rem; }
+  .choke-risk { display:flex; align-items:center; gap:0.4rem; }
+  .risk-bar { flex:1; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+  .risk-fill { height:100%; border-radius:2px; }
+  .risk-high { background:var(--red); }
+  .risk-med { background:var(--amber); }
+  .risk-low { background:var(--green); }
+  .risk-pct { font-size:0.72rem; font-weight:700; color:var(--muted); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    position:relative; z-index:1;
+    background:rgba(0,0,0,0.3);
+    border-top:1px solid var(--border);
+    padding:2rem; text-align:center;
+    font-size:0.78rem; color:var(--muted);
+  }
+  footer strong { color:var(--text); }
+
+  /* ─── INTERACTIVE SLIDER (what-if) ─── */
+  .slider-wrap { margin:1.5rem 0; }
+  .slider-label { display:flex; justify-content:space-between; font-size:0.8rem; color:var(--muted); margin-bottom:0.5rem; }
+  .slider-label strong { color:var(--accent); font-size:1rem; font-weight:700; }
+  input[type=range] {
+    -webkit-appearance:none; width:100%; height:6px;
+    background:rgba(255,255,255,0.1); border-radius:3px; outline:none;
+    cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:18px; height:18px;
+    background:var(--accent); border-radius:50%; cursor:pointer;
+    box-shadow:0 0 12px rgba(0,196,255,0.5);
+  }
+
+  /* ─── DYNAMIC RESULTS ─── */
+  .dynamic-bars { margin-top:1.5rem; }
+
+  /* ─── TABS ─── */
+  .tab-nav { display:flex; gap:0.5rem; border-bottom:1px solid var(--border); margin-bottom:2rem; overflow-x:auto; }
+  .tab-btn {
+    padding:0.75rem 1.25rem; font-size:0.82rem; font-weight:600;
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    border-bottom:2px solid transparent; transition:all 0.2s; white-space:nowrap;
+  }
+  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--navy); }
+  ::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">Maritime<span>KPI</span></div>
+  <div class="nav-links">
+    <a onclick="showSection('hero')" class="active" id="nav-hero">Overview</a>
+    <a onclick="showSection('kpis')" id="nav-kpis">KPIs</a>
+    <a onclick="showSection('whatif')" id="nav-whatif">What-If</a>
+    <a onclick="showSection('sources')" id="nav-sources">Data Sources</a>
+    <a onclick="showSection('recos')" id="nav-recos">Recommendations</a>
+  </div>
+  <span class="nav-badge">KEDGE P42</span>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section id="hero">
+  <div class="hero-tag">Live Dashboard · French Maritime Supply Chain</div>
+  <h1>Vulnerabilities & <span class="accent">Strengths</span><br>of France's <span class="accent2">Maritime</span> Flows</h1>
+  <p class="hero-sub">An interactive KPI dashboard measuring port capacity, chokepoint dependency, and supply chain resilience across Energy and Agri-Food sectors.</p>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val">325.5M</div>
+      <div class="hero-stat-label">Tonnes handled (2024)</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">85.9%</div>
+      <div class="hero-stat-label">Peak port utilization</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">8</div>
+      <div class="hero-stat-label">KPIs tracked</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">2</div>
+      <div class="hero-stat-label">Strategic sectors</div>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <button class="btn btn-primary" onclick="showSection('kpis')">→ Explore KPIs</button>
+    <button class="btn btn-outline" onclick="showSection('whatif')">Run What-If Scenario</button>
+  </div>
+</section>
+
+<!-- ═══════════════════ KPIs ═══════════════════ -->
+<section id="kpis" class="section-hidden">
+<div class="section-wrap">
+  <div class="section-header">
+    <div class="section-eyebrow">Performance Indicators</div>
+    <h2 class="section-title">Our 8 Strategic KPIs</h2>
+    <p class="section-desc">All KPIs are computed from official sources (SDES, Eurostat, UN Comtrade, CRE). Data covers 2016–2024.</p>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showKpiTab('capacity', this)">Capacity Utilization</button>
+    <button class="tab-btn" onclick="showKpiTab('throughput', this)">Throughput Growth</button>
+    <button class="tab-btn" onclick="showKpiTab('market', this)">EU Market Share</button>
+    <button class="tab-btn" onclick="showKpiTab('chokepoint', this)">Chokepoint Dependency</button>
+    <button class="tab-btn" onclick="showKpiTab('port-dep', this)">Port Dependency</button>
+    <button class="tab-btn" onclick="showKpiTab('geodiv', this)">Geographic Diversification</button>
+  </div>
+
+  <!-- CAPACITY UTILIZATION -->
+  <div id="tab-capacity">
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <div class="card-label">⚡ Energy Sector — 2024</div>
+        <div class="divider"></div>
+
+        <div class="cap-item">
+          <div class="cap-header">
+            <span class="cap-name">Dunkerque — Natural Gas (IN)</span>
+            <span class="cap-pct" style="color:var(--red)">85.9%</span>
+          </div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-red" style="width:85.9%"></div></div>
+          <div class="cap-info">⚠ HIGH RISK — Near saturation. Limited buffer to absorb additional LNG flows. <span class="badge badge-red">Critical</span></div>
+        </div>
+
+        <div class="cap-item">
+          <div class="cap-header">
+            <span class="cap-name">Marseille — Natural Gas (IN)</span>
+            <span class="cap-pct" style="color:var(--amber)">78.0%</span>
+          </div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-amber" style="width:78%"></div></div>
+          <div class="cap-info">High utilization. Strong energy demand but limited demand-spike flexibility. <span class="badge badge-amber">Sensitive</span></div>
+        </div>
+
+        <div class="cap-item">
+          <div class="cap-header">
+            <span class="cap-name">HAROPA — Natural Gas (IN)</span>
+            <span class="cap-pct" style="color:var(--green)">54.3%</span>
+          </div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:54.3%"></div></div>
+          <div class="cap-info">Comfortable zone. Available buffer capacity & flexibility to absorb flows. <span class="badge badge-green">Comfortable</span></div>
+        </div>
+
+        <div style="margin-top:1rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border-radius:8px; font-size:0.78rem; color:var(--muted); border-left:3px solid var(--accent);">
+          <strong style="color:var(--text)">Formula:</strong> Capacity Utilization = Throughput 2024 / Max Historical Throughput (2000–2024) × 100<br>
+          Since real design capacity is unavailable, we use the <em>highest historically observed throughput</em> as a proxy for attainable capacity — a standard approach in port planning literature.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🌾 Agri-Food Sector — 2024</div>
+        <div class="divider"></div>
+
+        <div class="cap-item">
+          <div class="cap-header">
+            <span class="cap-name">HAROPA — Cereals (OUT)</span>
+            <span class="cap-pct" style="color:var(--amber)">78.8%</span>
+          </div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-amber" style="width:78.8%"></div></div>
+          <div class="cap-info">Dominant EU grain hub. Operates near historical peak — limited flexibility under harvest shocks. <span class="badge badge-amber">Sensitive</span></div>
+        </div>
+
+        <div class="cap-item">
+          <div class="cap-header">
+            <span class="cap-name">Dunkerque — Cereals (OUT)</span>
+            <span class="cap-pct" style="color:var(--green)">41.8%</span>
+          </div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:41.8%"></div></div>
+          <div class="cap-info">Secondary cereal gateway. Good buffer capacity — can absorb overflow from HAROPA. <span class="badge badge-green">Comfortable</span></div>
+        </div>
+
+        <div class="cap-item">
+          <div class="cap-header">
+            <span class="cap-name">Marseille — Cereals (OUT)</span>
+            <span class="cap-pct" style="color:var(--green)">24.8%</span>
+          </div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:24.8%"></div></div>
+          <div class="cap-info">Low cereal specialization. Retains significant unused capacity. <span class="badge badge-green">Comfortable</span></div>
+        </div>
+
+        <div style="margin-top:1rem; padding:0.75rem 1rem; background:rgba(0,229,160,0.05); border-radius:8px; font-size:0.78rem; color:var(--muted); border-left:3px solid var(--green);">
+          <strong style="color:var(--text)">Key insight:</strong> Agrifood flows are corridor-based and export-driven (Atlantic façade). Unlike energy, the national risk is concentrated in one hub: HAROPA handles <strong style="color:var(--text)">~43%</strong> of all French cereal maritime exports, making it a critical single point of vulnerability.
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem; padding:1rem; background:var(--surface2); border-radius:12px; border:1px solid var(--border); font-size:0.82rem; color:var(--muted);">
+      <strong style="color:var(--text)">Interpretation thresholds:</strong> &nbsp;
+      <span class="badge badge-green">Below 70% — Comfortable</span>&nbsp;
+      <span class="badge badge-amber">70–85% — Sensitive</span>&nbsp;
+      <span class="badge badge-red">Above 85% — High Risk</span>
+      &nbsp; | Based on port capacity planning literature (MAT/HEAT framework)
+    </div>
+  </div>
+
+  <!-- THROUGHPUT GROWTH -->
+  <div id="tab-throughput" style="display:none">
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <div class="card-label">⚡ Energy — YoY Throughput Growth</div>
+        <div class="divider"></div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">2020 (COVID shock)</span><span class="cap-pct" style="color:var(--red)">−40%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-red" style="width:40%"></div></div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">2021 (Recovery)</span><span class="cap-pct" style="color:var(--green)">+40%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:40%"></div></div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">2023 (Peak export)</span><span class="cap-pct" style="color:var(--green)">+60%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:60%"></div></div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">2024 (Contraction)</span><span class="cap-pct" style="color:var(--red)">−30%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-red" style="width:30%"></div></div>
+        </div>
+        <p style="font-size:0.78rem; color:var(--muted); margin-top:0.75rem">Post-2020 recovery visible but no stable growth trend. High volatility signals fragility.</p>
+        <p style="font-size:0.7rem; color:var(--muted); margin-top:0.4rem">Source: UN ComTrade Database · SDES Statinfo</p>
+      </div>
+      <div class="card">
+        <div class="card-label">🌾 Agri-Food — YoY Throughput Growth</div>
+        <div class="divider"></div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">2018 (Positive trend)</span><span class="cap-pct" style="color:var(--green)">+15%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:50%"></div></div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">2023 (Peak)</span><span class="cap-pct" style="color:var(--green)">+22%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:73%"></div></div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">2024 (Sharp drop)</span><span class="cap-pct" style="color:var(--red)">−5%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-red" style="width:16%"></div></div>
+        </div>
+        <p style="font-size:0.78rem; color:var(--muted); margin-top:0.75rem">2024 decline driven by trade tariff uncertainty and companies shipping fewer goods. Generally positive trend 2018–2023.</p>
+        <p style="font-size:0.7rem; color:var(--muted); margin-top:0.4rem">Source: UN ComTrade Database · SDES Statinfo</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EU MARKET SHARE -->
+  <div id="tab-market" style="display:none">
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <div class="card-label">⚡ EU Market Share — Energy Sector</div>
+        <div class="card-value" style="color:var(--accent)">~40%</div>
+        <div class="card-sub">France's share of total EU energy port throughput (2022–2024 avg)</div>
+        <div class="divider"></div>
+        <p style="font-size:0.8rem; color:var(--muted); line-height:1.6">France's EU market share in energy has been relatively stable at ~38–44%, with a peak in 2022 driven by the energy crisis (Russia-Ukraine war) and France's role as an LNG gateway. Slight decline in 2024 as EU-wide imports decreased.</p>
+        <div style="margin-top:1rem">
+          <div class="cap-bar-bg" style="height:12px"><div class="cap-bar-fill fill-green" style="width:40%"></div></div>
+          <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--muted); margin-top:0.4rem"><span>0%</span><span>France ~40%</span><span>100% EU total</span></div>
+        </div>
+        <p style="font-size:0.7rem; color:var(--muted); margin-top:0.75rem">Source: Eurostat — Maritime transport of goods (country level) · SDES Statinfo</p>
+      </div>
+      <div class="card">
+        <div class="card-label">🌾 EU Market Share — Agri-Food Sector</div>
+        <div class="card-value" style="color:var(--green)">~47%</div>
+        <div class="card-sub">France's share of EU agri-food port throughput (2023–2024)</div>
+        <div class="divider"></div>
+        <p style="font-size:0.8rem; color:var(--muted); line-height:1.6">Strong position: France handled nearly half of EU agri-food maritime flows. However, 2019–2024 shows growing competition from Belgium, Netherlands, and Germany. The 2024 sharp drop in French agri production (worst harvest in 40 years) affected exports.</p>
+        <div style="margin-top:1rem">
+          <div class="cap-bar-bg" style="height:12px"><div class="cap-bar-fill fill-green" style="width:47%"></div></div>
+          <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--muted); margin-top:0.4rem"><span>0%</span><span>France ~47%</span><span>100% EU total</span></div>
+        </div>
+        <p style="font-size:0.7rem; color:var(--muted); margin-top:0.75rem">Source: Eurostat — Maritime transport of goods (country level) · SDES Statinfo</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHOKEPOINT -->
+  <div id="tab-chokepoint" style="display:none">
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-label">Chokepoint Dependency Ratio — Definition</div>
+      <p style="font-size:0.82rem; color:var(--muted); line-height:1.7; margin-top:0.5rem">
+        <strong style="color:var(--text)">CDR = Total chokepoint trade ÷ Total trade value</strong><br>
+        Measures the proportion of French trade that transits through strategic maritime chokepoints. A high CDR means that a single geographic point of failure can disrupt a significant share of national trade. Based on: Ang, C. (2021) + UN Comtrade bilateral flow data.
+      </p>
+    </div>
+    <div class="choke-grid">
+      <div class="choke-card">
+        <div class="choke-name">🔴 Strait of Hormuz</div>
+        <div class="choke-loc">Oman / Iran — Persian Gulf to Arabian Sea</div>
+        <div class="choke-risk">
+          <div class="risk-bar"><div class="risk-fill risk-high" style="width:90%"></div></div>
+          <span class="risk-pct">Critical</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:0.5rem">~20% of global LNG flows. Natural gas imports from Middle East. No alternative route.</div>
+      </div>
+      <div class="choke-card">
+        <div class="choke-name">🔴 Suez Canal</div>
+        <div class="choke-loc">Egypt — Red Sea to Mediterranean</div>
+        <div class="choke-risk">
+          <div class="risk-bar"><div class="risk-fill risk-high" style="width:85%"></div></div>
+          <span class="risk-pct">Critical</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:0.5rem">Disrupted 2023–2024 (Red Sea crisis). France–Asia volumes fell 50% post-crisis.</div>
+      </div>
+      <div class="choke-card">
+        <div class="choke-name">🟠 Bab el-Mandeb</div>
+        <div class="choke-loc">Yemen / Djibouti — Red Sea to Gulf of Aden</div>
+        <div class="choke-risk">
+          <div class="risk-bar"><div class="risk-fill risk-med" style="width:75%"></div></div>
+          <span class="risk-pct">High</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:0.5rem">Houthi attacks 2023–2024. Direct link to Suez disruption.</div>
+      </div>
+      <div class="choke-card">
+        <div class="choke-name">🟠 Strait of Malacca</div>
+        <div class="choke-loc">Malaysia / Indonesia — Indian Ocean to Pacific</div>
+        <div class="choke-risk">
+          <div class="risk-bar"><div class="risk-fill risk-med" style="width:70%"></div></div>
+          <span class="risk-pct">High</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:0.5rem">Carries LNG, agri imports (cocoa). Piracy risk.</div>
+      </div>
+      <div class="choke-card">
+        <div class="choke-name">🟡 Strait of Gibraltar</div>
+        <div class="choke-loc">Spain / Morocco — Atlantic to Mediterranean</div>
+        <div class="choke-risk">
+          <div class="risk-bar"><div class="risk-fill risk-low" style="width:45%"></div></div>
+          <span class="risk-pct">Moderate</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:0.5rem">Carries most French energy & agri exports. Strategic for France.</div>
+      </div>
+      <div class="choke-card">
+        <div class="choke-name">🟡 Cape of Good Hope</div>
+        <div class="choke-loc">South Africa — Alternative to Suez</div>
+        <div class="choke-risk">
+          <div class="risk-bar"><div class="risk-fill risk-low" style="width:35%"></div></div>
+          <span class="risk-pct">Moderate</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:0.5rem">Alternative rerouting route during Suez crisis. Adds +10–14 days.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORT DEPENDENCY -->
+  <div id="tab-port-dep" style="display:none">
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <div class="card-label">⚡ Port Dependency — Energy</div>
+        <div class="divider"></div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">Marseille</span><span class="cap-pct" style="color:var(--red)">~39%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-red" style="width:39%"></div></div>
+          <div class="cap-info">91.9% of coal volumes. 59% of natural gas. Most dominant energy hub.</div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">HAROPA (Le Havre)</span><span class="cap-pct" style="color:var(--amber)">~32%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-amber" style="width:32%"></div></div>
+          <div class="cap-info">Key crude oil import hub. Second largest energy port nationally.</div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">Nantes Saint-Nazaire</span><span class="cap-pct" style="color:var(--green)">~15%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:15%"></div></div>
+        </div>
+        <div style="margin-top:0.75rem; padding:0.75rem; background:rgba(255,59,92,0.08); border-radius:8px; border-left:3px solid var(--red);">
+          <span style="font-size:0.78rem; color:var(--muted)">⚠ <strong style="color:var(--text)">~70%</strong> of total energy flows depend on just 2 ports. A disruption in Marseille or HAROPA would directly threaten national energy supply.</span>
+        </div>
+        <p style="font-size:0.7rem; color:var(--muted); margin-top:0.75rem">Source: SDES — Statinfo Ports Maritimes (2016–2024)</p>
+      </div>
+      <div class="card">
+        <div class="card-label">🌾 Port Dependency — Agri-Food</div>
+        <div class="divider"></div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">Nantes Saint-Nazaire</span><span class="cap-pct" style="color:var(--red)">~73%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-red" style="width:73%"></div></div>
+          <div class="cap-info">88.7% of cereals. 89.8% of animal feed. Extreme concentration.</div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">HAROPA (Rouen)</span><span class="cap-pct" style="color:var(--amber)">~43%</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-amber" style="width:43%"></div></div>
+          <div class="cap-info">Europe's #1 grain export hub. 54% of French maritime cereal exports.</div>
+        </div>
+        <div style="margin-top:0.75rem; padding:0.75rem; background:rgba(255,59,92,0.08); border-radius:8px; border-left:3px solid var(--red);">
+          <span style="font-size:0.78rem; color:var(--muted)">⚠ Agri-food dependency is the most extreme of all sectors. A single strike or flood event at Nantes could halt nearly all French cereal imports.</span>
+        </div>
+        <p style="font-size:0.7rem; color:var(--muted); margin-top:0.75rem">Source: SDES — Statinfo Ports Maritimes (2016–2024)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GEO DIVERSIFICATION -->
+  <div id="tab-geodiv" style="display:none">
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <div class="card-label">Geographic Diversification Index (HHI)</div>
+        <div class="divider"></div>
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:1rem; line-height:1.6">
+          The HHI (Herfindahl-Hirschman Index) measures concentration across France's 4 maritime basins: Channel (MCH), Atlantic (ATL), Mediterranean (MED), Overseas (OM).<br>
+          <strong style="color:var(--text)">HHI ↑ → Diversification ↓ → Resilience ↓</strong>
+        </p>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">Channel / North Sea (MCH)</span><span class="cap-pct" style="color:var(--amber)">HHI ~0.0035</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-amber" style="width:70%"></div></div>
+          <div class="cap-info">Historically dominant. Includes HAROPA, Dunkerque. Decreasing since 2019 — good sign.</div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">Mediterranean (MED)</span><span class="cap-pct" style="color:var(--amber)">HHI ~0.0022</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-amber" style="width:44%"></div></div>
+          <div class="cap-info">Marseille-driven. Slightly declining since 2019 — more ships from more origins.</div>
+        </div>
+        <div class="cap-item">
+          <div class="cap-header"><span class="cap-name">Atlantic (ATL)</span><span class="cap-pct" style="color:var(--green)">HHI ~0.0005</span></div>
+          <div class="cap-bar-bg"><div class="cap-bar-fill fill-green" style="width:10%"></div></div>
+          <div class="cap-info">Most diversified basin. Nantes, La Rochelle, Bordeaux. Growing role.</div>
+        </div>
+        <p style="font-size:0.78rem; color:var(--muted); margin-top:1rem; line-height:1.6">
+          <strong style="color:var(--text)">Insight:</strong> Channel and Mediterranean are still dominant, but concentration has decreased since 2019. Ships are now coming from more regions — a positive signal for resilience.
+        </p>
+        <p style="font-size:0.7rem; color:var(--muted); margin-top:0.75rem">Source: SDES Statinfo · Eurostat Maritime Transport</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Port Connectivity Score (LSCI)</div>
+        <div class="divider"></div>
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:1rem; line-height:1.6">
+          The Liner Shipping Connectivity Index (LSCI) measures how well France is integrated into global shipping networks. Higher = more connected.<br>
+          Source: UNCTAD
+        </p>
+        <div class="card-value" style="color:var(--amber); margin-bottom:0.5rem">~260</div>
+        <div class="card-sub">France's LSCI average (2023–2024) — declining from ~290 in 2017</div>
+        <div class="divider"></div>
+        <p style="font-size:0.8rem; color:var(--muted); line-height:1.6">
+          Despite high absolute connectivity, France is <strong style="color:var(--text)">losing ground</strong>. Major shipping companies are focusing on large hub ports (Rotterdam, Antwerp) and reducing direct connections to French ports. This is a structural competitiveness risk.
+        </p>
+        <p style="font-size:0.7rem; color:var(--muted); margin-top:0.75rem">Source: UNCTAD LSCI Database · Eurostat</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════ WHAT-IF ═══════════════════ -->
+<section id="whatif" class="section-hidden">
+<div class="section-wrap">
+  <div class="section-header">
+    <div class="section-eyebrow">Scenario Planning</div>
+    <h2 class="section-title">What-If Scenarios</h2>
+    <p class="section-desc">Interactive simulation of how global disruptions impact French port capacity utilization. Adjust the disruption intensity to see the projected impact.</p>
+  </div>
+
+  <div class="scenario-tabs">
+    <button class="stab active" onclick="showScenario('hormuz', this)">🔴 Strait of Hormuz</button>
+    <button class="stab" onclick="showScenario('suez', this)">🟠 Suez / Red Sea</button>
+    <button class="stab" onclick="showScenario('cyber', this)">💻 Cyberattack</button>
+    <button class="stab" onclick="showScenario('flood', this)">🌊 Coastal Flooding</button>
+  </div>
+
+  <!-- HORMUZ -->
+  <div id="panel-hormuz" class="scenario-panel active">
+    <div class="scenario-card">
+      <div class="scenario-trigger">CURRENT GEOPOLITICAL RISK · 2024–2025</div>
+      <div class="scenario-title">Strait of Hormuz — Full or Partial Blockage</div>
+      <p style="font-size:0.82rem; color:var(--muted); line-height:1.7; margin-bottom:1rem">
+        The Strait of Hormuz handles ~20% of global LNG and crude oil trade. In 2024–2025, escalating Iran–US tensions have raised the real possibility of partial or full closure. This directly affects France's energy imports, routed through Marseille and Dunkerque — both already operating near capacity.
+      </p>
+
+      <div class="slider-wrap">
+        <div class="slider-label">
+          <span>Disruption Intensity</span>
+          <strong id="slider-val">50%</strong>
+        </div>
+        <input type="range" min="0" max="100" value="50" id="hormuz-slider" oninput="updateHormuz(this.value)">
+        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--muted); margin-top:0.25rem">
+          <span>Normal</span><span>60% blockage</span><span>100% blockage</span>
+        </div>
+      </div>
+
+      <div class="dynamic-bars" id="hormuz-results">
+        <div class="cards-grid cols-3" style="margin-bottom:1rem">
+          <div class="impact-box">
+            <div class="impact-before">Baseline 2024</div>
+            <div class="impact-port">Dunkerque LNG</div>
+            <div class="impact-arrow">↓</div>
+            <div class="impact-after" id="dunk-val">85.9%</div>
+            <div id="dunk-badge" class="badge badge-red" style="margin-top:0.4rem">High Risk</div>
+          </div>
+          <div class="impact-box">
+            <div class="impact-before">Baseline 2024</div>
+            <div class="impact-port">Marseille Energy</div>
+            <div class="impact-arrow">↓</div>
+            <div class="impact-after" id="mars-val">78.0%</div>
+            <div id="mars-badge" class="badge badge-amber" style="margin-top:0.4rem">Sensitive</div>
+          </div>
+          <div class="impact-box">
+            <div class="impact-before">Baseline 2024</div>
+            <div class="impact-port">HAROPA Energy</div>
+            <div class="impact-arrow">↓</div>
+            <div class="impact-after" id="har-val">54.3%</div>
+            <div id="har-badge" class="badge badge-green" style="margin-top:0.4rem">Comfortable</div>
+          </div>
+        </div>
+        <div id="hormuz-analysis" style="padding:1rem; background:rgba(0,0,0,0.2); border-radius:10px; border-left:3px solid var(--amber); font-size:0.82rem; color:var(--muted); line-height:1.7">
+          At 50% disruption, France faces rerouting of ~10% of its LNG supply. Dunkerque enters critical zone. Emergency imports from Norway and USA increase pressure on all terminals.
+        </div>
+      </div>
+    </div>
+
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <div class="card-label">Case 1 — 60% Blockage</div>
+        <div class="card-value" style="color:var(--amber); font-size:1.6rem">Severe Stress</div>
+        <div class="divider"></div>
+        <p style="font-size:0.8rem; color:var(--muted); line-height:1.7">Ships reroute via Cape of Good Hope (+10–14 days). Operators rush to rebuild strategic stocks. Port volumes surge as alternative suppliers (US, Norway) send emergency cargoes. Buffer capacity at Dunkerque and Marseille disappears entirely. Any additional shock (strike, maintenance) triggers full congestion.</p>
+        <div style="margin-top:1rem">
+          <span class="badge badge-red">Dunkerque → ~95–100%</span>&nbsp;
+          <span class="badge badge-red">Marseille → ~88–92%</span>&nbsp;
+          <span class="badge badge-amber">HAROPA → ~70%</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Case 2 — 100% Blockage</div>
+        <div class="card-value" style="color:var(--red); font-size:1.6rem">System Crisis</div>
+        <div class="divider"></div>
+        <p style="font-size:0.8rem; color:var(--muted); line-height:1.7">Complete interruption of Gulf LNG flows. France's 5 LNG terminals are fully mobilized. Capacity exceeds historical maximum. Queuing of ships, delays measured in weeks. National energy reserves activated. The bipolar gateway structure (Dunkerque/North + Marseille/South) reveals its structural weakness: <strong style="color:var(--text)">no Atlantic alternative of comparable scale.</strong></p>
+        <div style="margin-top:1rem">
+          <span class="badge badge-red">Dunkerque → 100%+ </span>&nbsp;
+          <span class="badge badge-red">Marseille → 100%+</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem; border-color:rgba(0,196,255,0.3)">
+      <div class="card-label">🎯 Strategic Conclusion</div>
+      <p style="font-size:0.85rem; line-height:1.8; margin-top:0.5rem">
+        This scenario directly validates our <strong>Capacity Utilization KPI</strong>: Dunkerque at 85.9% and Marseille at 78% already provide almost no buffer. A Strait of Hormuz disruption at 60% would push both into crisis. France's bipolar energy gateway structure — North Sea + Mediterranean — is efficient under normal conditions but lacks resilience under systemic global shocks. The strategic recommendation is clear: <strong style="color:var(--accent)">develop Atlantic energy gateway capacity and increase LNG strategic storage</strong>.
+      </p>
+    </div>
+  </div>
+
+  <!-- SUEZ -->
+  <div id="panel-suez" class="scenario-panel">
+    <div class="scenario-card">
+      <div class="scenario-trigger">RECENT REAL-WORLD DISRUPTION · 2023–2024</div>
+      <div class="scenario-title">Red Sea / Suez Crisis — Rerouting Impact</div>
+      <p style="font-size:0.82rem; color:var(--muted); line-height:1.7; margin-bottom:1rem">
+        Starting late 2023, Houthi attacks in the Red Sea forced major shipping companies (Maersk, MSC, CMA CGM) to reroute via the Cape of Good Hope. This real disruption already impacted France directly: Asia-France volumes dropped 50%, freight costs surged, and Spain gained a 13% maritime cost advantage over French ports.
+      </p>
+      <div class="cards-grid cols-3">
+        <div class="impact-box">
+          <div class="impact-port">France–Asia Trade</div>
+          <div class="impact-after after-red">−50%</div>
+          <div class="impact-before">Volume drop post-crisis</div>
+        </div>
+        <div class="impact-box">
+          <div class="impact-port">Marseille Connectivity</div>
+          <div class="impact-after after-red">−7.1%</div>
+          <div class="impact-before">Shipping links lost</div>
+        </div>
+        <div class="impact-box">
+          <div class="impact-port">Spain Cost Advantage</div>
+          <div class="impact-after after-amber">+13%</div>
+          <div class="impact-before">vs French ports</div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem; color:var(--muted); margin-top:1rem">Source: Bedoya-Maya et al. (2025) — AIS ship movement data analysis, MarineTraffic 2023–2024</p>
+    </div>
+  </div>
+
+  <!-- CYBER -->
+  <div id="panel-cyber" class="scenario-panel">
+    <div class="scenario-card">
+      <div class="scenario-trigger">EMERGING SYSTEMIC RISK</div>
+      <div class="scenario-title">Major Cyberattack on French Port Community System</div>
+      <p style="font-size:0.82rem; color:var(--muted); line-height:1.7; margin-bottom:1rem">
+        44% of maritime professionals have faced a cyberattack. The NotPetya attack caused $10B+ in losses to Maersk. A similar attack on French PCS (Port Community System) would freeze booking, gate, documentation and tracking simultaneously. LNG terminal operations are particularly vulnerable as they rely heavily on digital control systems.
+      </p>
+      <div class="cards-grid cols-2">
+        <div class="impact-box" style="text-align:left; padding:1rem">
+          <div class="impact-port" style="font-size:0.85rem; margin-bottom:0.5rem">Immediate impacts</div>
+          <ul style="font-size:0.78rem; color:var(--muted); line-height:2; padding-left:1rem">
+            <li>Terminal operations halted 24–72h</li>
+            <li>LNG unloading suspended</li>
+            <li>Cold-chain agri imports at risk</li>
+            <li>Manual fallback = 30% capacity</li>
+          </ul>
+        </div>
+        <div class="impact-box" style="text-align:left; padding:1rem">
+          <div class="impact-port" style="font-size:0.85rem; margin-bottom:0.5rem">Cascading effects</div>
+          <ul style="font-size:0.78rem; color:var(--muted); line-height:2; padding-left:1rem">
+            <li>Ships queue → saturation within 48h</li>
+            <li>National energy buffer shrinks</li>
+            <li>Agrifood spoilage risk (perishables)</li>
+            <li>Supply disruption for downstream industry</li>
+          </ul>
+        </div>
+      </div>
+      <p style="font-size:0.78rem; color:var(--muted); margin-top:1rem">Source: Oral & Paker (2023) · Valero (2023) — Maritime cybersecurity literature review</p>
+    </div>
+  </div>
+
+  <!-- FLOOD -->
+  <div id="panel-flood" class="scenario-panel">
+    <div class="scenario-card">
+      <div class="scenario-trigger">CLIMATE RISK · INCREASING FREQUENCY</div>
+      <div class="scenario-title">Extreme Coastal Flooding — Key Port Closure</div>
+      <p style="font-size:0.82rem; color:var(--muted); line-height:1.7; margin-bottom:1rem">
+        French ports were designed for past climate conditions and face rising exposure to sea-level-driven flooding. A storm surge damaging access roads, yards, or critical infrastructure at Marseille or Dunkerque would directly affect energy unloading. Extreme heat threatens cold-chain integrity for agri-food imports.
+      </p>
+      <div class="cards-grid cols-2">
+        <div class="impact-box">
+          <div class="impact-port">If Dunkerque closes</div>
+          <div class="impact-after after-red">85.9%</div>
+          <div class="impact-before">LNG demand shifts to Marseille → immediate saturation</div>
+        </div>
+        <div class="impact-box">
+          <div class="impact-port">If Marseille closes</div>
+          <div class="impact-after after-amber">~78%</div>
+          <div class="impact-before">Energy flows to Dunkerque + HAROPA → both near critical</div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem; color:var(--muted); margin-top:1rem">Source: Cochran & Caisse des Dépôts (2019) · Verschuur, Lumma & Hall (2025)</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════ DATA SOURCES ═══════════════════ -->
+<section id="sources" class="section-hidden">
+<div class="section-wrap">
+  <div class="section-header">
+    <div class="section-eyebrow">Methodology & Transparency</div>
+    <h2 class="section-title">Where Does Our Data Come From?</h2>
+    <p class="section-desc">All data used in this dashboard is sourced from official, public, and peer-reviewed sources. Here is exactly what each source provides and how we use it.</p>
+  </div>
+
+  <div class="card">
+    <div class="source-row">
+      <div class="source-icon">🇫🇷</div>
+      <div>
+        <div class="source-name">SDES — Service des Données et Études Statistiques</div>
+        <div class="source-desc">Official French Ministry statistics bureau (Ministère de la Transition Écologique). Publishes quarterly port traffic reports (Statinfo Ports Maritimes) by freight type, port, and year from 2000 to 2024.</div>
+        <div class="source-what"><span>Capacity Utilization KPI</span><span>Throughput Growth</span><span>Port Dependency Ratio</span></div>
+      </div>
+    </div>
+    <div class="source-row">
+      <div class="source-icon">🇪🇺</div>
+      <div>
+        <div class="source-name">Eurostat — Maritime Transport of Goods</div>
+        <div class="source-desc">EU statistical office. Provides port-level data on gross weight of goods transported to/from main European ports, broken down by country, port, and cargo type. Quarterly data, 2016–2024.</div>
+        <div class="source-what"><span>EU Market Share</span><span>Geographic Diversification</span><span>Sector Focus Slides</span></div>
+      </div>
+    </div>
+    <div class="source-row">
+      <div class="source-icon">🌐</div>
+      <div>
+        <div class="source-name">UN Comtrade Plus</div>
+        <div class="source-desc">United Nations bilateral trade database. Provides import/export values (CIF/FOB) and quantities (kg) by country, partner, HS product code, and year. Used for France's top 5 trade partners and sector-specific flows (HS10 cereals, HS2711 LNG, HS2709 crude oil).</div>
+        <div class="source-what"><span>Trade Overview</span><span>Chokepoint Dependency</span><span>Supplier/Customer Concentration</span></div>
+      </div>
+    </div>
+    <div class="source-row">
+      <div class="source-icon">⚡</div>
+      <div>
+        <div class="source-name">CRE — Commission de Régulation de l'Énergie</div>
+        <div class="source-desc">French energy regulator. ATTM7 tariff decisions and LNG terminal capacity reports. Confirms long-term booking status of Montoir (until 2035), Fos Cavaou (until 2040), and Fos Tonkin (until 2028).</div>
+        <div class="source-what"><span>LNG Terminal Capacity</span><span>Contractual Security KPI</span></div>
+      </div>
+    </div>
+    <div class="source-row">
+      <div class="source-icon">🚢</div>
+      <div>
+        <div class="source-name">UNCTAD — Liner Shipping Connectivity Index (LSCI)</div>
+        <div class="source-desc">UN Conference on Trade and Development. Measures each country's integration into global liner shipping networks based on number of vessels, shipping companies, services, and container ship size.</div>
+        <div class="source-what"><span>Port Connectivity Score</span></div>
+      </div>
+    </div>
+    <div class="source-row">
+      <div class="source-icon">📚</div>
+      <div>
+        <div class="source-name">Academic Literature</div>
+        <div class="source-desc">Peer-reviewed studies used for KPI definitions, vulnerability framework, and chokepoint analysis: Jiang et al. (2023), Bedoya-Maya et al. (2025), Verschuur et al. (2025), Oral & Paker (2023), Wendler-Bosco & Nicholson (2020), Merk et al. (2011).</div>
+        <div class="source-what"><span>Chokepoint Dependency</span><span>Vulnerability Framework</span><span>KPI Literature Links</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <div class="card-label">📐 Capacity Utilization — Methodology Note</div>
+    <div class="divider"></div>
+    <p style="font-size:0.82rem; color:var(--muted); line-height:1.8">
+      Since official design capacity data for French ports is not publicly available in harmonized form, we use a <strong style="color:var(--text)">maximum historical throughput proxy</strong>: the highest annual volume recorded per port per sector between 2000 and 2024 (SDES data).<br><br>
+      <strong style="color:var(--text)">Formula:</strong> Capacity Utilization (%) = Throughput 2024 / Max Historical Throughput (2000–2024) × 100<br><br>
+      This is consistent with academic port planning literature (MAT/HEAT framework — Maximum Attainable Throughput / Highest Efficient Attainable Throughput). It reflects what the port has already demonstrated it can handle, making it a realistic and defensible benchmark.
+      <br><br>
+      <span style="color:var(--accent)">Data Quality: Throughput data = High (official SDES). Capacity proxy = Medium (empirical maximum). All limitations are clearly flagged.</span>
+    </p>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════ RECOMMENDATIONS ═══════════════════ -->
+<section id="recos" class="section-hidden">
+<div class="section-wrap">
+  <div class="section-header">
+    <div class="section-eyebrow">Strategic Implications</div>
+    <h2 class="section-title">Recommendations</h2>
+    <p class="section-desc">Based on our KPI analysis, what should policymakers and port authorities do to improve French maritime supply chain resilience?</p>
+  </div>
+
+  <div class="card">
+    <div class="reco-item">
+      <div class="reco-num">1</div>
+      <div>
+        <div class="reco-title">Develop Atlantic Energy Gateway Capacity</div>
+        <div class="reco-desc">France's bipolar energy structure (Dunkerque North + Marseille South) leaves no buffer under disruption. Building or expanding LNG terminal capacity on the Atlantic façade (Nantes Saint-Nazaire, La Rochelle) would provide a third gateway, reducing concentration risk and improving shock absorption. CRE data confirms all current terminals are fully booked — new capacity is urgently needed.</div>
+      </div>
+      <div class="reco-sector reco-energy">Energy</div>
+    </div>
+    <div class="reco-item">
+      <div class="reco-num">2</div>
+      <div>
+        <div class="reco-title">Increase Strategic LNG Storage Capacity</div>
+        <div class="reco-desc">France's LNG terminals are 100% contracted, leaving no spot capacity for emergency imports during a Hormuz or Suez disruption. Expanding underground gas storage and LNG buffer tanks would allow the system to absorb 2–4 week supply shocks without triggering immediate port congestion.</div>
+      </div>
+      <div class="reco-sector reco-energy">Energy</div>
+    </div>
+    <div class="reco-item">
+      <div class="reco-num">3</div>
+      <div>
+        <div class="reco-title">Strengthen HAROPA Cereal Export Redundancy</div>
+        <div class="reco-desc">HAROPA (Rouen) handles ~43% of French maritime cereal exports and runs at 78.8% capacity utilization — close to the sensitive zone. Developing secondary cereal export capacity at La Rochelle and Dunkerque would reduce single-hub dependency. The 2024 harvest shock (−40% volumes) exposed how close to the limit the system operates.</div>
+      </div>
+      <div class="reco-sector reco-agri">Agrifood</div>
+    </div>
+    <div class="reco-item">
+      <div class="reco-num">4</div>
+      <div>
+        <div class="reco-title">Diversify Energy Import Partners Beyond US LNG</div>
+        <div class="reco-desc">France's energy imports are heavily concentrated on the USA (~78% of LNG imports). While this reduced dependency on Russian gas post-2022, it creates a new single-source vulnerability. Actively diversifying toward Norway, Qatar, and Africa reduces CDR (Chokepoint Dependency Ratio) and strengthens supply security.</div>
+      </div>
+      <div class="reco-sector reco-energy">Energy</div>
+    </div>
+    <div class="reco-item">
+      <div class="reco-num">5</div>
+      <div>
+        <div class="reco-title">Implement Real-Time Capacity Monitoring Dashboard</div>
+        <div class="reco-desc">This tool. Port authorities currently lack a unified, real-time system to track capacity utilization across sectors. A live KPI dashboard — updated quarterly with SDES data — would enable early-warning detection, proactive investment decisions, and coordinated crisis response. This dashboard is the operational prototype of that tool.</div>
+      </div>
+      <div class="reco-sector reco-both">Both Sectors</div>
+    </div>
+    <div class="reco-item">
+      <div class="reco-num">6</div>
+      <div>
+        <div class="reco-title">Invest in Port Digitalization & Cybersecurity</div>
+        <div class="reco-desc">44% of maritime professionals have faced cyber threats. A PCS attack at any major French port would immediately push capacity utilization beyond 100% (as manual operations run at ~30% throughput). Investing in resilient, redundant digital systems and cyber incident response plans is essential infrastructure protection.</div>
+      </div>
+      <div class="reco-sector reco-both">Both Sectors</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem; border-color:rgba(0,229,160,0.3)">
+    <div class="card-label" style="color:var(--green)">🎓 Mission Value — Why This Dashboard Matters</div>
+    <div class="divider"></div>
+    <p style="font-size:0.85rem; line-height:1.8; color:var(--muted)">
+      This dashboard translates academic KPIs into an operational decision-support tool for public port authorities and policymakers. It answers the core question of our mission: <strong style="color:var(--text)">"Can French maritime ports physically absorb demand — and what happens when they can't?"</strong><br><br>
+      By combining SDES throughput data, UN Comtrade bilateral flows, CRE regulatory data, and academic vulnerability literature, we provide a unified resilience picture that no single existing source offers. The what-if scenarios make abstract geopolitical risks concrete and quantifiable.
+    </p>
+  </div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <strong>MaritimeKPI Dashboard</strong> — Vulnerabilities & Strengths of the French Maritime Supply Chain<br>
+  KEDGE Business School · MSc Global Supply Chain · Promotion P42 · 2025<br>
+  <span style="color:rgba(255,255,255,0.3)">Arabi Zhour · Yu Bingqin · Elayen Chaimae · Bacha Wissam · Knoepffler Halvard</span><br><br>
+  Data sources: SDES · Eurostat · UN Comtrade · CRE · UNCTAD · Academic Literature
+</footer>
+
+<script>
+// ─── NAVIGATION ───
+function showSection(id) {
+  ['hero','kpis','whatif','sources','recos'].forEach(s => {
+    const el = document.getElementById(s);
+    el.classList.toggle('section-hidden', s !== id);
+  });
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  const nav = document.getElementById('nav-'+id);
+  if(nav) nav.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  // Animate bars on show
+  if(id==='kpis') {
+    setTimeout(() => {
+      document.querySelectorAll('.cap-bar-fill').forEach(b => {
+        b.style.transition = 'width 1.2s cubic-bezier(0.25,0.46,0.45,0.94)';
+      });
+    }, 100);
+  }
+}
+
+// ─── KPI TABS ───
+function showKpiTab(tab, btn) {
+  ['capacity','throughput','market','chokepoint','port-dep','geodiv'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if(el) el.style.display = t===tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── SCENARIO TABS ───
+function showScenario(id, btn) {
+  document.querySelectorAll('.scenario-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── WHAT-IF SLIDER ───
+function updateHormuz(val) {
+  const v = parseInt(val);
+  document.getElementById('slider-val').textContent = v + '%';
+
+  // Base values
+  const bases = { dunk: 85.9, mars: 78.0, har: 54.3 };
+
+  // Impact model: at 100% disruption, ports surge to ~100%
+  const dunkNew = Math.min(100, bases.dunk + (v/100)*15).toFixed(1);
+  const marsNew = Math.min(100, bases.mars + (v/100)*22).toFixed(1);
+  const harNew  = Math.min(100, bases.har  + (v/100)*28).toFixed(1);
+
+  document.getElementById('dunk-val').textContent = dunkNew + '%';
+  document.getElementById('mars-val').textContent = marsNew + '%';
+  document.getElementById('har-val').textContent  = harNew  + '%';
+
+  // Update colors & badges
+  updateBadge('dunk-badge', dunkNew);
+  updateBadge('mars-badge', marsNew);
+  updateBadge('har-badge',  harNew);
+
+  // Analysis text
+  const analysis = document.getElementById('hormuz-analysis');
+  if(v < 30) {
+    analysis.style.borderLeftColor = 'var(--green)';
+    analysis.innerHTML = 'At '+v+'% disruption, impact on French ports is limited. LNG rerouting from US/Norway compensates. Minor delays expected.';
+  } else if(v < 60) {
+    analysis.style.borderLeftColor = 'var(--amber)';
+    analysis.innerHTML = 'At '+v+'% disruption, emergency imports surge. Dunkerque approaches critical zone. Marseille enters sensitive zone. Buffer capacity shrinks rapidly.';
+  } else if(v < 90) {
+    analysis.style.borderLeftColor = 'var(--red)';
+    analysis.innerHTML = '⚠ At '+v+'% disruption — CRITICAL: Both Dunkerque and Marseille near saturation. No buffer capacity remains. A single additional shock (strike, weather) causes full congestion. National energy security at risk.';
+  } else {
+    analysis.style.borderLeftColor = 'var(--red)';
+    analysis.innerHTML = '🚨 SYSTEM CRISIS at '+v+'%: All major French LNG terminals operating at or beyond historical maximum. Ship queuing measured in weeks. National emergency reserves activated. Atlantic gateway absence is the critical structural weakness.';
+  }
+}
+
+function updateBadge(id, val) {
+  const el = document.getElementById(id);
+  const n = parseFloat(val);
+  el.className = 'badge';
+  if(n >= 85) { el.classList.add('badge-red'); el.textContent = '● High Risk'; }
+  else if(n >= 70) { el.classList.add('badge-amber'); el.textContent = '● Sensitive'; }
+  else { el.classList.add('badge-green'); el.textContent = '● Comfortable'; }
+}
+
+// ─── INIT BARS ───
+window.addEventListener('load', () => {
+  // Start bars at 0 then animate
+  document.querySelectorAll('.cap-bar-fill').forEach(b => {
+    const w = b.style.width;
+    b.style.width = '0%';
+    setTimeout(() => { b.style.width = w; }, 200);
+  });
+});
+</script>
+</body>
+</html>
